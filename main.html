@@ -29,15 +29,34 @@
     margin-top: 20px;
     font-weight: 500;
   }
+
+  .modal_text {
+    color: black;
+  }
 </style>
 </head>
 <body>
-  <h1 class="text-center">SuiXi 환율 계산기</h1>
+  <h1 class="text-center">1box 환율 계산기</h1>
 
   <div class="converter">
-    <button class="btn btn-warning mt-3" style="float: right" onclick="clearAll()">초기화</button><br /><br />
+    <div>
+      <button class="btn btn-primary mt-3" style="float: left;" onclick="returnToFirstCurrency()">초기환율 재설정</button>
+      <button class="btn btn-warning mt-3" style="float: right; margin-left: 20px;" onclick="clearAll()">초기화</button> &nbsp; &nbsp;
+      <button class="btn btn-danger mt-3" style="float: right;" data-toggle="modal" data-target="#myModal" onclick="getSavedRates()">기준환율 변경</button> &nbsp; &nbsp;<br />
+    <div>
+    <br /><br />  
+
+    <label>원화 (KRW):</label>
+    <input id="krw" type="number" class="form-control" placeholder="원화 입력..." oninput="convertFrom('KRW')">
+
+    <label>달러 (USD):</label>
+    <input id="usd" type="number" class="form-control" placeholder="USD 달러 입력..." oninput="convertFrom('USD')">
+
     <label>위안화 (CNY, SCNY):</label>
     <input id="cny" type="number" class="form-control" placeholder="위안화 입력..." oninput="convertFrom('CNY')">
+
+    <label>엔화 (JPY):</label>
+    <input id="jpy" type="number" class="form-control" placeholder="엔화 입력..." oninput="convertFrom('JPY')">
 
     <label>pSXP:</label>
     <input id="psxp" type="number" class="form-control" placeholder="pSXP 입력..." oninput="convertFrom('pSXP')">
@@ -45,51 +64,244 @@
     <label>Helidoge:</label>
     <input id="helidoge" type="number" class="form-control" placeholder="Helidoge 입력..." oninput="convertFrom('Helidoge')">
 
-    <label>달러 (USD):</label>
-    <input id="usd" type="number" class="form-control" placeholder="USD 달러 입력..." oninput="convertFrom('USD')">
-
-    <label>원화 (KRW):</label>
-    <input id="krw" type="number" class="form-control" placeholder="원화 입력..." oninput="convertFrom('KRW')">
+    
 
     <div class="rate-info">
-      <h3 class="text-center mt-5">기준 환율:</h3>
+      <h3 class="text-center mt-5">사용자 적용 1달러 기준 환율:</h3>
+      <ul>
+        <li id="current_saved_krw"></li>
+        <li id="current_saved_cny"></li>
+        <li id="current_saved_jpy"></li>
+        <li id="current_saved_psxp"></li>
+        <li id="current_saved_helidoge"></li>
+      </ul>
+    </div>
+
+    <div class="rate-info">
+      <h3 class="text-center mt-5">처음 출시 기준 환율:</h3>
       <ul>
         <li>1 SCNY = 0.1408 pSXP = 0.7139 Helidoge = $0.1333 = ₩200</li>
         <li>1 Helidoge = 0.1972 pSXP = $0.1 = ₩150</li>
         <li>1 pSXP = 5.0709 Helidoge = ₩760.635</li>
         <li>1 USD = ₩1500 = ¥7.5</li>
+        <li>1 JPY = ₩10 = $0.0067</li>
       </ul>
     </div>
   </div>
 
+  <!-- The Modal -->
+  <div class="modal" id="myModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h4 style="color:black;">기준환율 변경(USD기준)</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <!-- Modal body -->
+        <div class="modal-body">
+          <h5 class="modal_text">1달러 기준 환율 수정</h5>
+          <label class="modal_text">원화 (KRW):</label>
+          <input id="update_krw" type="text" class="form-control" placeholder="원화 입력..." oninput="convertFrom('KRW')">
+
+          <label class="modal_text">위안화 (CNY, SCNY):</label>
+          <input id="update_cny" type="number" class="form-control" placeholder="위안화 입력..." oninput="convertFrom('CNY')">
+
+          <label class="modal_text">엔화 (JPY):</label>
+          <input id="update_jpy" type="number" class="form-control" placeholder="엔화 입력..." oninput="convertFrom('JPY')">
+
+          <label class="modal_text">pSXP:</label>
+          <input id="update_psxp" type="number" class="form-control" placeholder="pSXP 입력..." oninput="convertFrom('pSXP')">
+
+          <label class="modal_text">Helidoge:</label>
+          <input id="update_helidoge" type="number" class="form-control" placeholder="Helidoge 입력..." oninput="convertFrom('Helidoge')">
+        </div>
+
+        <!-- Modal footer -->
+        <div class="text-center p-3">
+          <button type="button" class="btn btn-danger pl-3 pr-3" data-dismiss="modal">닫기</button> &nbsp;
+          <button type="button" class="btn btn-primary pl-3 pr-3" data-dismiss="modal" onclick="changeCurrency()">적용</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <script>
-    // 기준 환율 (1단위 기준으로 모두 환산)
-    const rates = {
-      CNY: { USD: 0.1333, KRW: 200, pSXP: 0.1408, Helidoge: 0.7139 },
-      USD: { KRW: 1500, CNY: 7.5, pSXP: 1/7.1, Helidoge: 1/10 },
-      KRW: { USD: 0.000666, CNY: 0.005, pSXP: 0.000184, Helidoge: 0.000667 },
-      pSXP: { KRW: 760.635, USD: 0.14, Helidoge: 5.0709, CNY: 7.1 },
-      Helidoge: { KRW: 150, USD: 0.1, pSXP: 0.1972, CNY: 1.4 }
+    // --- 1️⃣ 저장된 환율 불러오기 또는 기본값 세팅 ---
+  const savedBase = localStorage.getItem('baseRates');
+  let baseRates = savedBase ? JSON.parse(savedBase) : {
+    KRW: 1500,
+    CNY: 7.5,
+    JPY: 150,
+    pSXP: 1.972,
+    Helidoge: 10
+  };
+  
+  let rates = {};
+
+  // --- 2️⃣ 기준 통화(USD)로부터 전체 환율 갱신 ---
+  function updateRatesFromBase() {
+    const USD = 1;
+    rates = {
+      USD: {},
+      KRW: {},
+      CNY: {},
+      JPY: {},
+      pSXP: {},
+      Helidoge: {}
     };
 
-    function convertFrom(currency) {
-      let value = parseFloat(document.getElementById(currency.toLowerCase()).value);
-      if (isNaN(value)) return;
+    // 1 USD 기준 → 각 통화로 변환값
+    rates.USD = { 
+      KRW: baseRates.KRW, 
+      CNY: baseRates.CNY, 
+      JPY: baseRates.JPY, 
+      pSXP: baseRates.pSXP, 
+      Helidoge: baseRates.Helidoge
+    };
 
-      // 다른 통화로 변환
-      for (let key in rates[currency]) {
-        let result = value * rates[currency][key];
-        document.getElementById(key.toLowerCase()).value = result.toFixed(4);
+    // 역변환 및 교차 계산
+    for (let from in rates) {
+      for (let to in rates.USD) {
+        if (from === 'USD') continue;
+        if (!rates[from]) rates[from] = {};
+        if (to === 'USD') continue;
+
+        // USD → to / USD → from
+        rates[from][to] = rates.USD[to] / rates.USD[from];
       }
     }
 
-    function clearAll() {
-      document.getElementById('cny').value = '';
-      document.getElementById('psxp').value = '';
-      document.getElementById('helidoge').value = '';
-      document.getElementById('usd').value = '';
-      document.getElementById('krw').value = '';
+    // USD → others
+    rates.KRW.USD = 1 / baseRates.KRW;
+    rates.CNY.USD = 1 / baseRates.CNY;
+    rates.JPY.USD = 1 / baseRates.JPY;
+    rates.pSXP.USD = baseRates.pSXP;
+    rates.Helidoge.USD = baseRates.Helidoge;
+
+    // KRW 기준 추가
+    rates.KRW.CNY = baseRates.CNY / (baseRates.KRW / USD);
+    rates.KRW.JPY = baseRates.JPY / (baseRates.KRW / USD);
+    rates.KRW.pSXP = (1 / baseRates.pSXP) / baseRates.KRW;
+    rates.KRW.Helidoge = (1 / baseRates.Helidoge) / baseRates.KRW;
+
+    console.log("✅ 업데이트된 환율:", rates);
+  }
+
+  updateRatesFromBase(); // 최초 실행
+
+  // --- 3️⃣ 변환 함수 ---
+  function convertFrom(currency) {
+    let value = parseFloat(parseNumber(document.getElementById(currency.toLowerCase()).value));
+    if (isNaN(value)) return;
+
+    for (let key in rates[currency]) {
+      let result = value * rates[currency][key];
+      if (key.toLowerCase() !== currency.toLowerCase()) {
+        document.getElementById(key.toLowerCase()).value = result.toFixed(4);
+      }
     }
+  }
+
+  function parseNumber(value) {
+  return parseFloat(value.replace(/,/g, ''));
+}
+
+  // --- 4️⃣ 초기화 ---
+  function clearAll() {
+    document.querySelectorAll("input").forEach(i => i.value = "");
+  }
+
+  function getSavedRates() {
+    const savedBase = localStorage.getItem('baseRates');
+    let currentSavedRates = savedBase ? JSON.parse(savedBase) : {
+      KRW: 1500,
+      CNY: 7.5,
+      JPY: 150,
+      pSXP: 1.972,
+      Helidoge: 10
+    };
+
+    document.getElementById('update_cny').value = currentSavedRates.CNY;
+    document.getElementById('update_psxp').value = currentSavedRates.pSXP;
+    document.getElementById('update_helidoge').value = currentSavedRates.Helidoge;
+    document.getElementById('update_jpy').value = currentSavedRates.JPY;
+    document.getElementById('update_krw').value = currentSavedRates.KRW;
+  }
+
+  // --- 5️⃣ 기준환율(USD) 변경 ---
+  function changeCurrency() {
+    /*let newRates = prompt(
+      "새 기준환율(1 USD 기준)을 JSON 형식으로 입력하세요.\n예: {\"KRW\":1450,\"CNY\":7.4,\"JPY\":155,\"pSXP\":7.2,\"Helidoge\":9.5}",
+      JSON.stringify(baseRates, null, 2)
+    );*/
+
+    if (document.getElementById('update_krw').value === '' ||
+      document.getElementById('update_cny').value === '' ||
+      document.getElementById('update_jpy').value === '' ||
+      document.getElementById('update_psxp').value === '' ||
+      document.getElementById('update_helidoge').value === '') {
+      alert("모든 값을 입력해 주세요.");
+      return;
+    }
+
+    let updatedRates = {
+      KRW: document.getElementById('update_krw').value ?? baseRates.KRW,
+      CNY: document.getElementById('update_cny').value ?? baseRates.CNY,
+      JPY: document.getElementById('update_jpy').value ?? baseRates.JPY,
+      pSXP: document.getElementById('update_psxp').value ?? baseRates.pSXP,
+      Helidoge: document.getElementById('update_helidoge').value ?? baseRates.Helidoge
+    };
+
+    try {
+      baseRates = updatedRates;
+      localStorage.setItem("baseRates", JSON.stringify(baseRates));
+      updateRatesFromBase();
+      alert("✅ USD 기준 환율이 수정 및 저장되었습니다!");
+      document.getElementById("current_saved_krw").innerText = "원화(KRW): " + baseRates.KRW;
+      document.getElementById("current_saved_cny").innerText = "위안화(CNY):" + baseRates.CNY;
+      document.getElementById("current_saved_jpy").innerText = "엔화(JPY):" + baseRates.JPY;
+      document.getElementById("current_saved_psxp").innerText = "pSXP: " + baseRates.pSXP;
+      document.getElementById("current_saved_helidoge").innerText = "Helidoge: " + baseRates.Helidoge;
+    } catch {
+      alert("❌ 오류가 발생 했습니다. 값을 다시 체크해주세요.");
+    }
+  }
+
+  function returnToFirstCurrency() {
+    let confirmed = confirm("USD 기준 환율을 처음 출시 버전으로 재설정하시겠습니까? 기존 저장된 환율은 삭제됩니다.")
+    if (!confirmed) {
+      return;
+    }
+    let updatedRates = {
+      KRW: 1500,
+      CNY: 7.5,
+      JPY: 150,
+      pSXP: 1.972,
+      Helidoge: 10
+    };
+    baseRates = updatedRates;
+    localStorage.setItem("baseRates", JSON.stringify(baseRates));
+    updateRatesFromBase();
+    clearAll();
+    alert("✅ USD 기준 환율이 처음 출시 버전으로 설정되었습니다!");
+    document.getElementById("current_saved_krw").innerText = "원화(KRW): " + baseRates.KRW;
+    document.getElementById("current_saved_cny").innerText = "위안화(CNY):" + baseRates.CNY;
+    document.getElementById("current_saved_jpy").innerText = "엔화(JPY):" + baseRates.JPY;
+    document.getElementById("current_saved_psxp").innerText = "pSXP: " + baseRates.pSXP;
+    document.getElementById("current_saved_helidoge").innerText = "Helidoge: " + baseRates.Helidoge;
+  }
+
+  window.addEventListener("load", function() {
+    document.getElementById("current_saved_krw").innerText = "원화(KRW): " + baseRates.KRW;
+    document.getElementById("current_saved_cny").innerText = "위안화(CNY):" + baseRates.CNY;
+    document.getElementById("current_saved_jpy").innerText = "엔화(JPY):" + baseRates.JPY;
+    document.getElementById("current_saved_psxp").innerText = "pSXP: " + baseRates.pSXP;
+    document.getElementById("current_saved_helidoge").innerText = "Helidoge: " + baseRates.Helidoge;
+  });
   </script>
 </body>
 </html>
